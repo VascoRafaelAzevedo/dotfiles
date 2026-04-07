@@ -21,7 +21,7 @@ profiles:
       algorithms: {}
       input: {}
       privateKeys:
-        - file:///home/vasco-debian/Documents/CLOUD/key_instance.key
+        - file://${HOME}/Documents/CLOUD/key_instance.key
       auth: publicKey
     weight: -1
     id: ssh:custom:VPS-ORACLE:45814147-deb7-4f83-b1ba-db14e36273ff

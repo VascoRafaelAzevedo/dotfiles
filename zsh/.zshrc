@@ -14,7 +14,7 @@ export TERM=xterm-kitty
 alias v='nvim'
 alias \?\?='gh copilot'
 alias \?='gh copilot --model "gpt-5-mini"'
-alias mirror='/home/vasco-debian/Downloads/scrcpy-linux-x86_64-v3.3.4/scrcpy --always-on-top'
+alias mirror='scrcpy --always-on-top'
 alias t='tmux'
 # ---- PATH (clean, no duplicates) ----
 export PATH="$HOME/.local/bin:$HOME/flutter/bin:$HOME/.npm-global/bin:$PATH"
@@ -58,3 +58,27 @@ nvm()  { lazy_load_nvm; nvm "$@"; }
 
 # ---- POWERLEVEL10K CONFIG ----
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# ── Modern tool integrations ──────────────────────────────────
+export EDITOR=nvim
+export VISUAL=nvim
+export PAGER="bat --style=plain"
+
+# eza (modern ls)
+if has eza; then
+  alias ls='eza --icons --group-directories-first'
+  alias ll='eza -lah --icons --group-directories-first --git'
+  alias tree='eza --tree --icons'
+fi
+
+# bat (modern cat)
+has bat && alias cat='bat --style=plain --paging=never'
+
+# zoxide (smarter cd)
+has zoxide && eval "$(zoxide init zsh --cmd cd)"
+
+# fzf keybinds & completions
+[[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]] && \
+    source /usr/share/doc/fzf/examples/key-bindings.zsh
+[[ -f /usr/share/doc/fzf/examples/completion.zsh ]] && \
+    source /usr/share/doc/fzf/examples/completion.zsh

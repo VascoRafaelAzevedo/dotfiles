@@ -61,6 +61,12 @@ cp "$DOTFILES_DIR/tmux/scripts/mru-update.sh" "$HOME/.tmux/mru-update.sh"
 chmod +x "$HOME/.tmux/mru-next.sh" "$HOME/.tmux/mru-update.sh"
 info "Tmux scripts copiados para ~/.tmux/"
 
+# chmod para todos os scripts do hyprland
+find "$CONFIG_DIR/hypr/scripts" "$CONFIG_DIR/hypr/UserScripts" \
+    -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
+[[ -f "$CONFIG_DIR/hypr/initial-boot.sh" ]] && chmod +x "$CONFIG_DIR/hypr/initial-boot.sh"
+info "Scripts hyprland marcados como executáveis"
+
 # zsh
 backup_and_link "$DOTFILES_DIR/zsh/.zshrc"   "$HOME/.zshrc"
 backup_and_link "$DOTFILES_DIR/zsh/.p10k.zsh" "$HOME/.p10k.zsh"

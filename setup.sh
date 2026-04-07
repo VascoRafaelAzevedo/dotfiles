@@ -34,6 +34,8 @@ section() {
 }
 has()           { command -v "$1" &>/dev/null; }
 pkg_installed() { dpkg -l "$1" 2>/dev/null | grep -q "^ii"; }
+add_path()      { grep -qF "$1" "${ZSHRC:-$HOME/.zshrc}" 2>/dev/null || echo "$1" >> "${ZSHRC:-$HOME/.zshrc}"; }
+latest_gh_release() { curl -s "https://api.github.com/repos/$1/releases/latest" | grep -oP '"tag_name":\s*"\K[^"]+'; }
 
 # ─────────────────────────────────────────────────────────────
 # VARIÁVEIS GLOBAIS (preenchidas durante Q&A)
@@ -67,6 +69,79 @@ INSTALL_NVIDIA=false
 INSTALL_BLUETOOTH=false
 
 INSTALL_DEV_FOLDERS=false
+
+# Browsers
+INSTALL_VSCODE=false
+INSTALL_GITHUB_DESKTOP=false
+INSTALL_GH_CLI=false
+INSTALL_TABBY=false
+INSTALL_COPILOT_CLI=false
+
+# Languages extended
+INSTALL_KOTLIN=false
+INSTALL_LUA=false
+INSTALL_HASKELL=false
+INSTALL_ELIXIR=false
+INSTALL_ZIG=false
+INSTALL_BUN=false
+INSTALL_DENO=false
+INSTALL_WASM=false
+INSTALL_R=false
+INSTALL_JULIA=false
+INSTALL_SWIFT=false
+INSTALL_ANDROID_SDK=false
+INSTALL_ANDROID_STUDIO=false
+
+# DevOps extended
+INSTALL_K9S=false
+INSTALL_PODMAN=false
+INSTALL_GCLOUD=false
+INSTALL_AZURECLI=false
+INSTALL_VAGRANT=false
+INSTALL_PACKER=false
+INSTALL_PULUMI=false
+INSTALL_TRIVY=false
+INSTALL_LAZYDOCKER=false
+INSTALL_CTOP=false
+INSTALL_DIVE=false
+INSTALL_ACT=false
+INSTALL_NGROK=false
+
+# Dev tools
+INSTALL_POSTMAN=false
+INSTALL_INSOMNIA=false
+INSTALL_DBEAVER=false
+INSTALL_TABLEPLUS=false
+INSTALL_GITKRAKEN=false
+INSTALL_MELD=false
+INSTALL_DIFFUSE=false
+INSTALL_WIRESHARK=false
+INSTALL_BEEKEEPER=false
+INSTALL_BRUNO=false
+INSTALL_HOPPSCOTCH=false
+INSTALL_PGADMIN=false
+INSTALL_REDIS_COMMANDER=false
+INSTALL_MONGO_EXPRESS=false
+INSTALL_SEQ=false
+INSTALL_SOAPUI=false
+INSTALL_HTTPIE=false
+INSTALL_POCKETBASE=false
+INSTALL_LOCALSTACK=false
+INSTALL_MAILHOG=false
+INSTALL_MITMPROXY=false
+INSTALL_TELEPRESENCE=false
+
+# Databases
+INSTALL_POSTGRES=false
+INSTALL_MYSQL=false
+INSTALL_REDIS_SERVER=false
+INSTALL_MONGODB=false
+INSTALL_SQLITE_TOOLS=false
+INSTALL_ELASTICSEARCH=false
+INSTALL_CASSANDRA=false
+INSTALL_COCKROACHDB=false
+INSTALL_INFLUXDB=false
+INSTALL_MINIO=false
 
 # Arrays com os números das apps opcionais seleccionadas por categoria
 SEL_BROWSERS=()
@@ -182,6 +257,12 @@ echo -e "  ${DIM}Log: $LOG_FILE${NC}"
 echo ""
 echo -e "  ${GREEN}Core (sempre instalado):${NC} zsh, nvim, tmux, kitty, git, curl, build-tools, Oh My Zsh, Powerlevel10k"
 echo ""
+
+# Não correr como root directamente
+if [[ $EUID -eq 0 ]]; then
+    error "Não corras este script como root. Usa um utilizador normal com sudo."
+    exit 1
+fi
 
 # Verificar internet
 if ! curl -s --max-time 5 https://deb.debian.org > /dev/null; then
@@ -1019,7 +1100,7 @@ if [[ "${INSTALL_MONGODB:-false}" == true ]]; then
     add_apt_repo "MongoDB" \
         "gpg:https://www.mongodb.org/static/pgp/server-7.0.asc" \
         "/usr/share/keyrings/mongodb-server-7.0.gpg" \
-        "deb [arch=amd64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg] https://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main" \
+        "deb [arch=amd64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg] https://repo.mongodb.org/apt/debian $(lsb_release -cs)/mongodb-org/7.0 main" \
         "/etc/apt/sources.list.d/mongodb-org-7.0.list"
 fi
 
@@ -1056,6 +1137,26 @@ for idx in "${SEL_BROWSERS[@]}"; do
                    "deb [arch=amd64 signed-by=/usr/share/keyrings/librewolf.gpg] https://deb.librewolf.net $(lsb_release -cs) main" \
                    "/etc/apt/sources.list.d/librewolf.list"
                sudo apt-get update -qq && apt_install librewolf
+           fi ;;
+        5) # Tor Browser
+           if ! has torbrowser-launcher; then
+               apt_install torbrowser-launcher
+           fi ;;
+        6) # Vivaldi
+           if ! has vivaldi-stable; then
+               wget -qO /tmp/vivaldi.gpg https://repo.vivaldi.com/archive/linux_signing_key.pub
+               sudo gpg --dearmor -o /usr/share/keyrings/vivaldi-browser.gpg /tmp/vivaldi.gpg
+               echo "deb [arch=amd64 signed-by=/usr/share/keyrings/vivaldi-browser.gpg] https://repo.vivaldi.com/archive/deb/ stable main" \
+                   | sudo tee /etc/apt/sources.list.d/vivaldi.list > /dev/null
+               sudo apt-get update -qq && apt_install vivaldi-stable
+           fi ;;
+        7) # Opera
+           if ! has opera; then
+               wget -qO /tmp/opera.gpg https://deb.opera.com/archive.key
+               sudo gpg --dearmor -o /usr/share/keyrings/opera-browser.gpg /tmp/opera.gpg
+               echo "deb [arch=amd64 signed-by=/usr/share/keyrings/opera-browser.gpg] https://deb.opera.com/opera-stable/ stable non-free" \
+                   | sudo tee /etc/apt/sources.list.d/opera.list > /dev/null
+               sudo apt-get update -qq && apt_install opera-stable
            fi ;;
     esac
 done
@@ -1290,7 +1391,8 @@ fi
 if [[ "$INSTALL_DOTNET" == true ]]; then
     if ! has dotnet; then
         step ".NET SDK"
-        wget -q "https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb" -O /tmp/ms-prod.deb
+        DEBIAN_VER=$(grep VERSION_ID /etc/os-release | cut -d'"' -f2)
+        wget -q "https://packages.microsoft.com/config/debian/${DEBIAN_VER}/packages-microsoft-prod.deb" -O /tmp/ms-prod.deb
         sudo dpkg -i /tmp/ms-prod.deb
         sudo apt-get update -qq && apt_install dotnet-sdk-8.0
     fi
@@ -1364,6 +1466,35 @@ fi
 # R
 [[ "${INSTALL_R:-false}" == true ]] && apt_install r-base r-base-dev
 
+# Julia
+if [[ "${INSTALL_JULIA:-false}" == true ]] && ! has julia; then
+    step "Julia (juliaup)"
+    curl -fsSL https://install.julialang.org | sh -s -- --yes
+    add_path 'export PATH="$HOME/.juliaup/bin:$PATH"'
+fi
+
+# Swift
+if [[ "${INSTALL_SWIFT:-false}" == true ]] && ! has swift; then
+    step "Swift (swiftly)"
+    curl -fsSL https://swift.org/install/swiftly/swiftly-$(uname -m).tar.gz | tar -xz -C /tmp
+    /tmp/swiftly init --quiet --no-modify-profile
+    add_path 'export PATH="$HOME/.local/share/swiftly/bin:$PATH"'
+fi
+
+# WASM (WebAssembly tools)
+if [[ "${INSTALL_WASM:-false}" == true ]]; then
+    step "WASM tools (wabt + emscripten)"
+    apt_install wabt
+    if ! has emcc; then
+        git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$HOME/emsdk" 2>/dev/null || \
+            (cd "$HOME/emsdk" && git pull)
+        cd "$HOME/emsdk"
+        ./emsdk install latest && ./emsdk activate latest
+        add_path 'source "$HOME/emsdk/emsdk_env.sh"'
+        cd -
+    fi
+fi
+
 # ── FASE 6: Devops/Containers ─────────────────────────────
 section "G — DevOps & Containers"
 
@@ -1422,6 +1553,88 @@ if [[ "${INSTALL_AWSCLI:-false}" == true ]] && ! has aws; then
     unzip -q /tmp/awscliv2.zip -d /tmp/awscli-extract
     sudo /tmp/awscli-extract/aws/install
     rm -rf /tmp/awscliv2.zip /tmp/awscli-extract
+fi
+
+# Google Cloud CLI
+if [[ "${INSTALL_GCLOUD:-false}" == true ]] && ! has gcloud; then
+    step "Google Cloud CLI"
+    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg \
+        | sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
+    echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
+        | sudo tee /etc/apt/sources.list.d/google-cloud-sdk.list > /dev/null
+    sudo apt-get update -qq && apt_install google-cloud-cli
+fi
+
+# Azure CLI
+if [[ "${INSTALL_AZURECLI:-false}" == true ]] && ! has az; then
+    step "Azure CLI"
+    curl -sL https://packages.microsoft.com/keys/microsoft.asc \
+        | sudo gpg --dearmor -o /usr/share/keyrings/microsoft.gpg
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" \
+        | sudo tee /etc/apt/sources.list.d/azure-cli.list > /dev/null
+    sudo apt-get update -qq && apt_install azure-cli
+fi
+
+# Vagrant (HashiCorp repo — terraform already adds it)
+if [[ "${INSTALL_VAGRANT:-false}" == true ]] && ! has vagrant; then
+    step "Vagrant"
+    # HashiCorp repo already added by Terraform section if selected; add if needed
+    if [[ ! -f /etc/apt/sources.list.d/hashicorp.list ]]; then
+        add_apt_repo "HashiCorp" \
+            "gpg:https://apt.releases.hashicorp.com/gpg" \
+            "/usr/share/keyrings/hashicorp-archive-keyring.gpg" \
+            "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" \
+            "/etc/apt/sources.list.d/hashicorp.list"
+        sudo apt-get update -qq
+    fi
+    apt_install vagrant
+fi
+
+# Packer
+if [[ "${INSTALL_PACKER:-false}" == true ]] && ! has packer; then
+    step "Packer"
+    if [[ ! -f /etc/apt/sources.list.d/hashicorp.list ]]; then
+        add_apt_repo "HashiCorp" \
+            "gpg:https://apt.releases.hashicorp.com/gpg" \
+            "/usr/share/keyrings/hashicorp-archive-keyring.gpg" \
+            "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" \
+            "/etc/apt/sources.list.d/hashicorp.list"
+        sudo apt-get update -qq
+    fi
+    apt_install packer
+fi
+
+# Pulumi
+if [[ "${INSTALL_PULUMI:-false}" == true ]] && ! has pulumi; then
+    step "Pulumi"
+    curl -fsSL https://get.pulumi.com | sh
+    add_path 'export PATH="$HOME/.pulumi/bin:$PATH"'
+fi
+
+# Trivy (container/FS vulnerability scanner)
+if [[ "${INSTALL_TRIVY:-false}" == true ]] && ! has trivy; then
+    step "Trivy"
+    curl -fsSL https://aquasecurity.github.io/trivy-repo/deb/public.key \
+        | sudo gpg --dearmor -o /usr/share/keyrings/trivy.gpg
+    echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" \
+        | sudo tee /etc/apt/sources.list.d/trivy.list > /dev/null
+    sudo apt-get update -qq && apt_install trivy
+fi
+
+# ngrok
+if [[ "${INSTALL_NGROK:-false}" == true ]] && ! has ngrok; then
+    step "ngrok"
+    curl -fsSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
+        | sudo gpg --dearmor -o /usr/share/keyrings/ngrok.gpg
+    echo "deb [signed-by=/usr/share/keyrings/ngrok.gpg] https://ngrok-agent.s3.amazonaws.com buster main" \
+        | sudo tee /etc/apt/sources.list.d/ngrok.list > /dev/null
+    sudo apt-get update -qq && apt_install ngrok
+fi
+
+# act (run GitHub Actions locally)
+if [[ "${INSTALL_ACT:-false}" == true ]] && ! has act; then
+    step "act"
+    curl -fsSL https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash -s -- -b /usr/local/bin
 fi
 
 # lazydocker
@@ -1727,9 +1940,6 @@ fi
 section "N — Variáveis de ambiente"
 
 ZSHRC="$HOME/.zshrc"
-add_path() {
-    grep -qF "$1" "$ZSHRC" 2>/dev/null || echo "$1" >> "$ZSHRC"
-}
 
 [[ "$INSTALL_GO" == true ]] && add_path 'export PATH="/usr/local/go/bin:$HOME/go/bin:$PATH"'
 [[ "$INSTALL_FLUTTER" == true ]] && add_path 'export PATH="$HOME/flutter/bin:$PATH"'
