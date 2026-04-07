@@ -1,0 +1,87 @@
+/* Minimal Rofi Theme — Gruvbox Dark, square, no rounded corners */
+
+* {
+    bg0:     #1d2021;
+    bg1:     #282828;
+    bg2:     #3c3836;
+    fg:      #ebdbb2;
+    fg-dim:  #928374;
+    orange:  #fe8019;
+    red:     #fb4934;
+
+    background-color:   transparent;
+    text-color:         @fg;
+    border-color:       @orange;
+}
+
+window {
+    background-color: @bg0;
+    border:           2px solid;
+    border-color:     @orange;
+    border-radius:    0;
+    width:            500px;
+    padding:          0;
+}
+
+mainbox {
+    background-color: @bg0;
+    children:         [ inputbar, listview ];
+    spacing:          0;
+}
+
+inputbar {
+    background-color: @bg1;
+    padding:          8px 12px;
+    children:         [ prompt, entry ];
+    border:           0 0 1px 0;
+    border-color:     @bg2;
+}
+
+prompt {
+    background-color: transparent;
+    text-color:       @orange;
+    padding:          0 6px 0 0;
+    font:             "JetBrainsMono Nerd Font Bold 12";
+}
+
+entry {
+    background-color: transparent;
+    text-color:       @fg;
+    font:             "JetBrainsMono Nerd Font 12";
+    placeholder:      "Search...";
+    placeholder-color: @fg-dim;
+}
+
+listview {
+    background-color: @bg0;
+    padding:          4px 0;
+    columns:          1;
+    lines:            10;
+    scrollbar:        false;
+    fixed-height:     false;
+}
+
+element {
+    background-color: transparent;
+    text-color:       @fg-dim;
+    padding:          6px 12px;
+    border-radius:    0;
+}
+
+element selected {
+    background-color: @bg2;
+    text-color:       @fg;
+    border:           0 0 0 2px;
+    border-color:     @orange;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       inherit;
+    font:             "JetBrainsMono Nerd Font 12";
+}
+
+element-icon {
+    size:             20px;
+    padding:          0 8px 0 0;
+}

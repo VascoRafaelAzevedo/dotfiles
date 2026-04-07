@@ -1,0 +1,166 @@
+/* ---- 💫 https://github.com/JaKooLit 💫 ---- */
+/* i3 Minimal Style — Gruvbox dark, square, no animations */
+
+/* --- Gruvbox Dark Palette --- */
+@define-color bg0h    #1d2021;
+@define-color bg0     #282828;
+@define-color bg1     #3c3836;
+@define-color bg3     #504945;
+@define-color fg      #ebdbb2;
+@define-color fg4     #a89984;
+@define-color gray    #928374;
+@define-color orange  #fe8019;
+@define-color yellow  #fabd2f;
+@define-color green   #b8bb26;
+@define-color red     #fb4934;
+@define-color blue    #83a598;
+
+* {
+  font-family: "JetBrainsMono Nerd Font", "Noto Sans", monospace;
+  font-size: 12px;
+  font-weight: bold;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+}
+
+window#waybar {
+  background: @bg0h;
+  color: @fg;
+  border-top: 2px solid @bg1;
+}
+
+/* --- Workspaces --- */
+#workspaces {
+  margin: 0;
+  padding: 0;
+}
+
+#workspaces button {
+  padding: 0 8px;
+  min-width: 24px;
+  background: transparent;
+  color: @gray;
+  border-radius: 0;
+  border: none;
+  border-right: 1px solid @bg1;
+  font-size: 12px;
+}
+
+#workspaces button:hover {
+  background: @bg1;
+  color: @fg;
+  box-shadow: none;
+}
+
+/* Workspace with at least one window */
+#workspaces button.occupied {
+  color: @yellow;
+  background: transparent;
+}
+
+/* Active (focused) workspace */
+#workspaces button.active {
+  background: @orange;
+  color: @bg0h;
+  border-right: 1px solid @orange;
+  font-weight: bold;
+}
+
+#workspaces button.urgent {
+  background: @red;
+  color: @bg0h;
+}
+
+/* --- Clock --- */
+#clock {
+  padding: 0 10px;
+  color: @fg;
+}
+
+/* --- Separator helper: all right-side modules --- */
+#memory,
+#temperature,
+#pulseaudio,
+#network,
+#battery,
+#power-profiles-daemon,
+#custom-power {
+  padding: 0 8px;
+  color: @fg;
+  border-left: 1px solid @bg1;
+}
+
+/* --- Memory --- */
+#memory.warning {
+  color: @yellow;
+}
+
+#memory.critical {
+  color: @red;
+}
+
+/* --- Temperature --- */
+#temperature {
+  color: @fg4;
+}
+
+#temperature.critical {
+  background: @red;
+  color: @bg0h;
+}
+
+/* --- Audio --- */
+#pulseaudio.muted {
+  color: @gray;
+}
+
+/* --- Network --- */
+#network.disconnected {
+  color: @red;
+}
+
+#network.linked,
+#network.ethernet {
+  color: @green;
+}
+
+/* --- Battery --- */
+#battery.charging {
+  color: @green;
+}
+
+#battery.warning:not(.charging) {
+  color: @yellow;
+}
+
+#battery.critical:not(.charging) {
+  color: @red;
+  animation-name: blink-red;
+  animation-duration: 1.5s;
+  animation-timing-function: steps(2);
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+@keyframes blink-red {
+  to { color: @bg0h; background: @red; }
+}
+
+/* --- Power Profiles --- */
+#power-profiles-daemon {
+  color: @blue;
+}
+
+/* --- Power button --- */
+#custom-power {
+  color: @red;
+  padding: 0 10px;
+}
+
+#custom-power:hover {
+  background: @red;
+  color: @bg0h;
+}

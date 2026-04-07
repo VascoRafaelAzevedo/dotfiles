@@ -1,0 +1,76 @@
+/* wlogout style — Gruvbox Dark estático (sem dependência de wallust) */
+
+* {
+    background-image: none;
+}
+
+window {
+    font-size: 18pt;
+    font-family: "JetBrainsMono Nerd Font", monospace;
+    color: #ebdbb2;
+    background-color: rgba(29, 32, 33, 0.88);
+}
+
+button {
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 22%;
+    background-color: rgba(40, 40, 40, 0.0);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    color: #a89984;
+    margin: 8px;
+    transition: all 0.2s ease;
+}
+
+button:focus,
+button:active,
+button:hover {
+    background-size: 30%;
+    background-color: rgba(80, 73, 69, 0.5);
+    border-color: #fe8019;
+    color: #ebdbb2;
+    outline-style: none;
+}
+
+#lock {
+    background-image: image(url("icons/lock.png"));
+}
+#lock:hover {
+    background-image: image(url("icons/lock-hover.png"));
+}
+
+#logout {
+    background-image: image(url("icons/logout.png"));
+}
+#logout:hover {
+    background-image: image(url("icons/logout-hover.png"));
+}
+
+#suspend {
+    background-image: image(url("icons/sleep.png"));
+}
+#suspend:hover {
+    background-image: image(url("icons/sleep-hover.png"));
+}
+
+#hibernate {
+    background-image: image(url("icons/hibernate.png"));
+}
+#hibernate:hover {
+    background-image: image(url("icons/hibernate-hover.png"));
+}
+
+#reboot {
+    background-image: image(url("icons/restart.png"));
+}
+#reboot:hover {
+    background-image: image(url("icons/restart-hover.png"));
+}
+
+#shutdown {
+    background-image: image(url("icons/power.png"));
+}
+#shutdown:hover {
+    background-image: image(url("icons/power-hover.png"));
+}

@@ -1,0 +1,28 @@
+# .gitignore para dotfiles
+
+# Backups e ficheiros temporários
+*.bak
+*.save
+*.save.1
+*.log
+*.hprof
+
+# Lazy.nvim — plugins instalados (pesados, instalam automaticamente)
+nvim/lazy-lock.json
+
+# Btop log
+btop/btop.log
+
+# Kitty temas extra (só mantemos gruvbox_dark que está em uso)
+kitty/kitty-themes/
+!kitty/kitty-themes/gruvbox_dark.conf
+
+# Hyprland — ficheiros gerados dinamicamente
+hypr/wallust/wallust-hyprland.conf
+
+# Segurança — nunca incluir
+.ssh/
+*.pem
+*.key
+*_rsa
+*_ed25519
