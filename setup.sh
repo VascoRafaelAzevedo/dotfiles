@@ -170,13 +170,19 @@ INSTALL_INFLUXDB=false
 INSTALL_MINIO=false
 
 # Arrays com os números das apps opcionais seleccionadas por categoria
+WM_EXTRAS_SEL=()
 SEL_BROWSERS=()
+SEL_LANGUAGES=()
+SEL_DEVOPS=()
 SEL_DEVTOOLS=()
+SEL_DATABASES=()
 SEL_TERMINAL=()
 SEL_MULTIMEDIA=()
 SEL_COMMUNICATION=()
 SEL_PRODUCTIVITY=()
 SEL_GAMING=()
+SEL_FONTS=()
+SEL_THEMES=()
 SEL_SYSTEM=()
 
 LOG_FILE="$HOME/setup-install.log"
@@ -894,9 +900,6 @@ fi
 {
     echo "INSTALL_HYPRLAND=$INSTALL_HYPRLAND"
     echo "INSTALL_WM_EXTRAS=$INSTALL_WM_EXTRAS"
-    echo "INSTALL_FIREFOX=$INSTALL_FIREFOX"
-    echo "INSTALL_BRAVE=$INSTALL_BRAVE"
-    echo "INSTALL_CHROME=$INSTALL_CHROME"
     echo "INSTALL_DOTFILES=$INSTALL_DOTFILES"
     echo "DOTFILES_REPO='$DOTFILES_REPO'"
     echo "INSTALL_ASUS=$INSTALL_ASUS"
@@ -911,10 +914,10 @@ fi
     echo "INSTALL_TERRAFORM=$INSTALL_TERRAFORM"
     echo "INSTALL_AWSCLI=$INSTALL_AWSCLI"
     echo "INSTALL_ANSIBLE=$INSTALL_ANSIBLE"
-    echo "INSTALL_NODE=$INSTALL_NODE"
+    echo "INSTALL_NVM=$INSTALL_NVM"
     echo "INSTALL_GO=$INSTALL_GO"
     echo "INSTALL_RUST=$INSTALL_RUST"
-    echo "INSTALL_PYTHON=$INSTALL_PYTHON"
+    echo "INSTALL_PYTHON_EXTRAS=$INSTALL_PYTHON_EXTRAS"
     echo "INSTALL_PHP=$INSTALL_PHP"
     echo "INSTALL_RUBY=$INSTALL_RUBY"
     echo "INSTALL_JAVA=$INSTALL_JAVA"
@@ -1020,6 +1023,7 @@ fi
 # Neovim
 if ! has nvim; then
     step "Neovim (AppImage)"
+    apt_install libfuse2 2>/dev/null || true   # required for AppImage on Debian
     wget -q "https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.appimage" -O /tmp/nvim.appimage
     chmod +x /tmp/nvim.appimage
     sudo mv /tmp/nvim.appimage /usr/local/bin/nvim
@@ -1080,7 +1084,8 @@ if [[ "$INSTALL_HYPRLAND" == true ]]; then
             3) # swww
                if ! has swww; then
                    cd "$BUILD"
-                   wget -q "https://github.com/LGFae/swww/releases/download/v0.9.5/swww-x86_64-unknown-linux-musl.tar.gz"
+                   SWWW_VER=$(curl -s https://api.github.com/repos/LGFae/swww/releases/latest | jq -r '.tag_name')
+                   wget -q "https://github.com/LGFae/swww/releases/download/${SWWW_VER}/swww-x86_64-unknown-linux-musl.tar.gz"
                    tar -xzf swww-*.tar.gz && sudo cp swww swww-daemon /usr/local/bin/ 2>/dev/null || true
                fi ;;
             4) # hyprlock
@@ -1140,7 +1145,7 @@ fi
 section "D — Repositórios externos"
 
 # Brave
-if in_array 0 "${SEL_BROWSERS[@]}" || in_array 1 "${SEL_BROWSERS[@]}"; then
+if in_array 1 "${SEL_BROWSERS[@]}"; then
     add_apt_repo "Brave" \
         "https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg" \
         "/usr/share/keyrings/brave-browser-archive-keyring.gpg" \
@@ -1350,10 +1355,19 @@ for idx in "${SEL_MULTIMEDIA[@]}"; do
         0) apt_install vlc ;;
         1) apt_install mpv ;;
         2) apt_install spotify-client ;;
-        7) apt_install rhythmbox ;;
-        8) apt_install cmus ;;
-        9) apt_install obs-studio ;;
-        10) apt_install kdenlive ;;
+        3) # Spotube
+           if ! has spotube; then
+               SPT_VER=$(curl -s https://api.github.com/repos/KRTirtho/spotube/releases/latest | jq -r '.tag_name' | tr -d 'v')
+               wget -q "https://github.com/KRTirtho/spotube/releases/download/v${SPT_VER}/Spotube-linux-x86_64.deb" -O /tmp/spotube.deb
+               sudo dpkg -i /tmp/spotube.deb || sudo apt-get -f install -y
+           fi ;;
+        5) apt_install rhythmbox ;;
+        6) apt_install cmus ;;
+        7) apt_install ncmpcpp mpd ;;
+        8) apt_install obs-studio ;;
+        9) apt_install kdenlive ;;
+        10) warn "DaVinci Resolve: download manual em https://www.blackmagicdesign.com/products/davinciresolve" ;;
+        11) apt_install shotcut ;;
         12) apt_install handbrake ;;
         13) apt_install ffmpeg ;;
         14) apt_install gimp ;;
@@ -1363,9 +1377,29 @@ for idx in "${SEL_MULTIMEDIA[@]}"; do
         18) apt_install blender ;;
         19) apt_install darktable ;;
         20) apt_install rawtherapee ;;
-        22) apt_install audacity ;;
-        25) apt_install ardour ;;
-        26) apt_install lmms ;;
+        22) # Upscayl (AppImage)
+            if ! has upscayl; then
+                UPSC_VER=$(curl -s https://api.github.com/repos/upscayl/upscayl/releases/latest | jq -r '.tag_name' | tr -d 'v')
+                wget -q "https://github.com/upscayl/upscayl/releases/download/v${UPSC_VER}/upscayl-${UPSC_VER}-linux.AppImage" -O "$HOME/.local/bin/upscayl"
+                chmod +x "$HOME/.local/bin/upscayl"
+            fi ;;
+        23) apt_install audacity ;;
+        24) apt_install ardour ;;
+        25) apt_install lmms ;;
+        26) apt_install cava ;;
+        27) # Freetube
+            if ! has freetube; then
+                FT_VER=$(curl -s https://api.github.com/repos/FreeTubeApp/FreeTube/releases/latest | jq -r '.tag_name' | tr -d 'v')
+                wget -q "https://github.com/FreeTubeApp/FreeTube/releases/download/v${FT_VER}/freetube_${FT_VER}_amd64.deb" -O /tmp/freetube.deb
+                sudo dpkg -i /tmp/freetube.deb || sudo apt-get -f install -y
+            fi ;;
+        28) apt_install celluloid ;;
+        29) # Stremio
+            if ! has stremio; then
+                wget -q "https://www.stremio.com/download/linux/latest" -O /tmp/stremio.deb 2>/dev/null || \
+                    warn "Stremio: download manual em https://www.stremio.com/downloads"
+                [ -f /tmp/stremio.deb ] && { sudo dpkg -i /tmp/stremio.deb || sudo apt-get -f install -y; }
+            fi ;;
     esac
 done
 
@@ -1396,19 +1430,37 @@ done
 for idx in "${SEL_PRODUCTIVITY[@]}"; do
     case $idx in
         5) apt_install libreoffice ;;
+        6) # OnlyOffice
+           if ! has onlyoffice-desktopeditors; then
+               wget -q "https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb" -O /tmp/onlyoffice.deb
+               sudo dpkg -i /tmp/onlyoffice.deb || sudo apt-get -f install -y
+           fi ;;
         7) apt_install calibre ;;
         8) apt_install okular ;;
         9) apt_install evince ;;
         10) apt_install zathura ;;
         11) apt_install nextcloud-desktop ;;
-        15) apt_install peazip || true ;;
-        16) apt_install gnome-disk-utility ;;
-        17) apt_install gparted ;;
+        14) apt_install filezilla ;;
+        15) apt_install peazip 2>/dev/null || apt_install p7zip-full p7zip-rar ;;
+        16) apt_install flatpak 2>/dev/null; warn "Flatseal: instala via Flatpak: flatpak install flathub com.github.tchx84.Flatseal" ;;
+        17) apt_install gnome-disk-utility ;;
+        18) apt_install gparted ;;
+        19) apt_install timeshift ;;
+        20) # ProtonVPN
+            if ! has protonvpn; then
+                wget -q "https://repo.protonvpn.com/debian/dists/stable/main/binary-all/protonvpn-stable-release_1.0.4_all.deb" -O /tmp/protonvpn.deb
+                sudo dpkg -i /tmp/protonvpn.deb && sudo apt-get update -qq && apt_install proton-vpn-gnome-desktop
+            fi ;;
+        21) # Mullvad VPN
+            if ! has mullvad; then
+                wget -q "https://mullvad.net/download/app/deb/latest" -O /tmp/mullvad.deb
+                sudo dpkg -i /tmp/mullvad.deb || sudo apt-get -f install -y
+            fi ;;
         22) apt_install qbittorrent ;;
         23) apt_install transmission ;;
         24) apt_install deluge ;;
-        25) apt_install keepassxc ;;
-        26) apt_install seahorse ;;
+        26) apt_install keepassxc ;;
+        27) apt_install seahorse ;;
     esac
 done
 
@@ -1422,7 +1474,7 @@ for idx in "${SEL_GAMING[@]}"; do
            } ;;
         1) apt_install lutris ;;
         4) apt_install gamemode ;;
-        6) apt_install mangohud ;;
+        5) apt_install mangohud ;;
         7) apt_install retroarch ;;
     esac
 done
@@ -1431,29 +1483,46 @@ done
 for idx in "${SEL_TERMINAL[@]}"; do
     case $idx in
         0) apt_install btop ;;
+        6) apt_install nnn ;;
         7) apt_install zoxide ;;
         8) apt_install fzf ;;
         9) apt_install ripgrep ;;
         10) apt_install fd-find ;;
         12) apt_install bat ;;
-        15) apt_install htop ;;
-        16) apt_install ncdu ;;
-        20) apt_install atuin || true ;;
+        16) apt_install bottom 2>/dev/null || true ;;   # bottom (btm)
+        17) apt_install htop ;;
+        18) apt_install ncdu ;;
+        20) # atuin — use official installer (not in Debian apt)
+            if ! has atuin; then
+                curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | bash || warn "atuin: falhou installer"
+            fi ;;
         22) apt_install thefuck ;;
         23) apt_install tldr ;;
+        24) # cheat — binary download
+            if ! has cheat; then
+                wget -q "https://github.com/cheat/cheat/releases/latest/download/cheat-linux-amd64.gz" -O /tmp/cheat.gz
+                gunzip /tmp/cheat.gz && sudo mv /tmp/cheat /usr/local/bin/cheat && sudo chmod +x /usr/local/bin/cheat
+            fi ;;
         25) apt_install glow ;;
         27) apt_install yq ;;
         28) apt_install jq ;;
-        32) apt_install nmap ;;
-        33) apt_install iperf3 ;;
-        34) apt_install mtr ;;
-        35) apt_install netcat-openbsd ;;
-        36) apt_install sshpass ;;
-        37) apt_install rsync ;;
+        29) # xh — curl alternative
+            if ! has xh; then
+                curl -sfL https://raw.githubusercontent.com/ducaale/xh/master/install.sh | sudo bash || \
+                    { has cargo && cargo install xh; }
+            fi ;;
+        30) apt_install httpie ;;
+        31) apt_install nmap ;;
+        32) apt_install iperf3 ;;
+        33) apt_install mtr ;;
+        34) apt_install netcat-openbsd ;;
+        35) apt_install sshpass ;;
+        36) apt_install rsync ;;
         39) apt_install timeshift ;;
-        43) apt_install neofetch ;;
-        45) apt_install lolcat ;;
-        46) apt_install figlet toilet ;;
+        42) apt_install neofetch ;;
+        44) apt_install lolcat ;;
+        45) apt_install figlet toilet ;;
+        46) apt_install asciinema ;;
     esac
 done
 
@@ -1509,8 +1578,9 @@ fi
 
 # Go
 if [[ "$INSTALL_GO" == true ]] && ! has go; then
-    step "Go 1.24"
-    wget -q "https://go.dev/dl/go1.24.4.linux-amd64.tar.gz" -O /tmp/go.tar.gz
+    step "Go (latest stable)"
+    GO_VER=$(curl -s https://go.dev/VERSION?m=text | head -1 | tr -d 'go')
+    wget -q "https://go.dev/dl/go${GO_VER}.linux-amd64.tar.gz" -O /tmp/go.tar.gz
     sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf /tmp/go.tar.gz && rm /tmp/go.tar.gz
     echo 'export PATH="/usr/local/go/bin:$PATH"' | sudo tee /etc/profile.d/go.sh > /dev/null
 fi
@@ -1610,7 +1680,7 @@ fi
 # Zig
 if [[ "${INSTALL_ZIG:-false}" == true ]] && ! has zig; then
     step "Zig"
-    ZIG_VER="0.13.0"
+    ZIG_VER=$(curl -s https://ziglang.org/download/index.json | jq -r '.master.version' 2>/dev/null || echo "0.13.0")
     wget -q "https://ziglang.org/download/${ZIG_VER}/zig-linux-x86_64-${ZIG_VER}.tar.xz" -O /tmp/zig.tar.xz
     sudo tar -xJf /tmp/zig.tar.xz -C /usr/local/
     sudo ln -sf "/usr/local/zig-linux-x86_64-${ZIG_VER}/zig" /usr/local/bin/zig
@@ -1805,7 +1875,8 @@ fi
 # ctop (container top)
 if [[ "${INSTALL_CTOP:-false}" == true ]] && ! has ctop; then
     step "ctop"
-    wget -q "https://github.com/bcicen/ctop/releases/latest/download/ctop-0.7.7-linux-amd64" -O /tmp/ctop
+    CTOP_VER=$(curl -s https://api.github.com/repos/bcicen/ctop/releases/latest | jq -r '.tag_name' | tr -d 'v')
+    wget -q "https://github.com/bcicen/ctop/releases/download/v${CTOP_VER}/ctop-${CTOP_VER}-linux-amd64" -O /tmp/ctop
     chmod +x /tmp/ctop && sudo mv /tmp/ctop /usr/local/bin/ctop
 fi
 
@@ -1844,7 +1915,8 @@ fi
 # Telepresence (K8s local dev)
 if [[ "${INSTALL_TELEPRESENCE:-false}" == true ]] && ! has telepresence; then
     step "Telepresence"
-    sudo curl -fL https://app.getambassador.io/download/tel2oss/releases/download/v2.17.0/telepresence-linux-amd64 \
+    TP_VER=$(curl -s https://api.github.com/repos/telepresenceio/telepresence/releases/latest | jq -r '.tag_name' | tr -d 'v')
+    sudo curl -fL "https://app.getambassador.io/download/tel2oss/releases/download/v${TP_VER}/telepresence-linux-amd64" \
         -o /usr/local/bin/telepresence
     sudo chmod +x /usr/local/bin/telepresence
 fi
@@ -1857,10 +1929,12 @@ export GOBIN="$GOPATH/bin"
 
 for idx in "${SEL_TERMINAL[@]}"; do
     case $idx in
-        1) # lazygit
-           if ! has lazygit && has go; then
-               go install github.com/jesseduffield/lazygit@latest
-               sudo cp "$GOBIN/lazygit" /usr/local/bin/ 2>/dev/null || true
+        1) # lazygit — use binary release (works without Go)
+           if ! has lazygit; then
+               LG_VER=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | jq -r '.tag_name' | tr -d 'v')
+               wget -q "https://github.com/jesseduffield/lazygit/releases/download/v${LG_VER}/lazygit_${LG_VER}_Linux_x86_64.tar.gz" -O /tmp/lazygit.tar.gz
+               tar -xzf /tmp/lazygit.tar.gz -C /tmp/ lazygit
+               sudo mv /tmp/lazygit /usr/local/bin/lazygit
            fi ;;
         3) # yazi
            if ! has yazi && has cargo; then
@@ -1872,24 +1946,33 @@ for idx in "${SEL_TERMINAL[@]}"; do
                sudo cp /tmp/yazi-extract/*/yazi /usr/local/bin/
            fi ;;
         4) # lf
-           if ! has lf && has go; then
-               env CGO_ENABLED=0 go install -ldflags="-s -w" github.com/gokcehan/lf@latest
-               sudo cp "$GOBIN/lf" /usr/local/bin/ 2>/dev/null || true
+           if ! has lf; then
+               LF_VER=$(curl -s https://api.github.com/repos/gokcehan/lf/releases/latest | jq -r '.tag_name')
+               wget -q "https://github.com/gokcehan/lf/releases/download/${LF_VER}/lf-linux-amd64.tar.gz" -O /tmp/lf.tar.gz
+               tar -xzf /tmp/lf.tar.gz -C /tmp/ lf
+               sudo mv /tmp/lf /usr/local/bin/lf
            fi ;;
         5) # ranger
            pip3 install ranger-fm --user ;;
-        6) # nnn
-           apt_install nnn ;;
         11) # eza
             if ! has eza && has cargo; then cargo install eza
             else apt_install eza 2>/dev/null || true; fi ;;
         13) # delta
-            if ! has delta && has cargo; then cargo install git-delta; fi ;;
+            if ! has delta; then
+                DELTA_VER=$(curl -s https://api.github.com/repos/dandavison/delta/releases/latest | jq -r '.tag_name')
+                wget -q "https://github.com/dandavison/delta/releases/download/${DELTA_VER}/git-delta_${DELTA_VER}_amd64.deb" -O /tmp/delta.deb
+                sudo dpkg -i /tmp/delta.deb || { has cargo && cargo install git-delta; }
+            fi ;;
         14) # dust
             has cargo && cargo install du-dust ;;
         15) # duf
-            apt_install duf 2>/dev/null || { cd "$BUILD" && wget -q "https://github.com/muesli/duf/releases/download/v0.8.1/duf_0.8.1_linux_amd64.deb" -O duf.deb && sudo dpkg -i duf.deb; } ;;
+            apt_install duf 2>/dev/null || {
+                DUF_VER=$(curl -s https://api.github.com/repos/muesli/duf/releases/latest | jq -r '.tag_name' | tr -d 'v')
+                wget -q "https://github.com/muesli/duf/releases/download/v${DUF_VER}/duf_${DUF_VER}_linux_amd64.deb" -O /tmp/duf.deb
+                sudo dpkg -i /tmp/duf.deb
+            } ;;
         19) # tmux-sessionizer
+            mkdir -p "$HOME/.local/bin"
             cat > "$HOME/.local/bin/ts" << 'TS_SCRIPT'
 #!/usr/bin/env bash
 if [[ $# -eq 1 ]]; then
@@ -1917,23 +2000,28 @@ TS_SCRIPT
             if ! has spf; then
                 bash -c "$(curl -sLo- https://superfile.netlify.app/install.sh)"
             fi ;;
-        38) # rclone
+        37) # rclone
             if ! has rclone; then
                 curl https://rclone.org/install.sh | sudo bash
             fi ;;
-        39) # restic (timeshift já tratado antes)
+        38) # restic
             apt_install restic 2>/dev/null || true ;;
         40) # Starship
             if ! has starship; then
                 curl -sS https://starship.rs/install.sh | sh -s -- -y
             fi ;;
-        44) # fastfetch
+        41) # oh-my-posh
+            if ! has oh-my-posh; then
+                sudo wget -q https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh
+                sudo chmod +x /usr/local/bin/oh-my-posh
+            fi ;;
+        43) # fastfetch
             apt_install fastfetch 2>/dev/null || {
                 wget -q "https://github.com/fastfetch-cli/fastfetch/releases/latest/download/fastfetch-linux-amd64.deb" -O /tmp/ff.deb
                 sudo dpkg -i /tmp/ff.deb
             } ;;
-        47) # asciinema
-            apt_install asciinema ;;
+        47) # terminalizer
+            has npm && npm install -g terminalizer 2>/dev/null || warn "terminalizer precisa de Node/npm" ;;
     esac
 done
 
@@ -2060,7 +2148,8 @@ fi
 # SoapUI (SOAP/REST tester)
 if [[ "${INSTALL_SOAPUI:-false}" == true ]] && [ ! -d "$HOME/.local/share/SoapUI" ]; then
     step "SoapUI"
-    SUI_VER="5.7.2"
+    SUI_VER=$(curl -s https://api.github.com/repos/SmartBear/soapui/releases/latest | jq -r '.tag_name' | tr -d 'soapui-')
+    SUI_VER="${SUI_VER:-5.7.2}"
     wget -q "https://dl.eviware.com/soapuios/${SUI_VER}/SoapUI-${SUI_VER}-linux-bin.tar.gz" -O /tmp/soapui.tar.gz
     mkdir -p "$HOME/.local/share/SoapUI"
     tar -xzf /tmp/soapui.tar.gz -C "$HOME/.local/share/SoapUI" --strip-components=1
