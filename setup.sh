@@ -183,7 +183,6 @@ SEL_PRODUCTIVITY=()
 SEL_GAMING=()
 SEL_FONTS=()
 SEL_THEMES=()
-SEL_SYSTEM=()
 
 LOG_FILE="$HOME/setup-install.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
@@ -1452,10 +1451,7 @@ for idx in "${SEL_COMMUNICATION[@]}"; do
         9) apt_install thunderbird ;;
         10) apt_install geary ;;
         11) # Betterbird
-            if ! has betterbird; then
-                BB_VER=$(curl -s https://api.github.com/repos/Betterbird/thunderbird-patches/releases/latest | jq -r '.tag_name' | head -1)
-                warn "Betterbird: download manual em https://www.betterbird.eu/downloads/"
-            fi ;;
+            warn "Betterbird: download manual em https://www.betterbird.eu/downloads/" ;;
         12) apt_install evolution ;;
         13) # WhatsApp (nativefier)
             if has npm && ! has whatsapp-nativefier; then
@@ -1748,7 +1744,7 @@ fi
 # Swift
 if [[ "${INSTALL_SWIFT:-false}" == true ]] && ! has swift; then
     step "Swift (swiftly)"
-    curl -fsSL https://swift.org/install/swiftly/swiftly-$(uname -m).tar.gz | tar -xz -C /tmp
+    curl -fsSL "https://swift.org/install/swiftly/swiftly-$(uname -m).tar.gz" | tar -xz -C /tmp
     /tmp/swiftly init --quiet --no-modify-profile
     add_path 'export PATH="$HOME/.local/share/swiftly/bin:$PATH"'
 fi
@@ -2143,7 +2139,6 @@ fi
 # GitKraken
 if [[ "${INSTALL_GITKRAKEN:-false}" == true ]] && ! has gitkraken; then
     step "GitKraken"
-    GK_VER=$(curl -s https://api.github.com/repos/gitkraken/gitkraken-docker/releases/latest | jq -r '.tag_name' | tr -d 'v') || GK_VER="10.3.0"
     wget -q "https://release.axocdn.com/linux/gitkraken-amd64.deb" -O /tmp/gitkraken.deb
     sudo dpkg -i /tmp/gitkraken.deb || sudo apt-get -f install -y
 fi
