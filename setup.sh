@@ -1420,9 +1420,52 @@ for idx in "${SEL_COMMUNICATION[@]}"; do
                "deb [arch=amd64 signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main" \
                "/etc/apt/sources.list.d/signal-xenial.list"
            sudo apt-get update -qq && apt_install signal-desktop ;;
+        4) # Zoom
+           if ! has zoom; then
+               wget -q "https://zoom.us/client/latest/zoom_amd64.deb" -O /tmp/zoom.deb
+               sudo dpkg -i /tmp/zoom.deb || sudo apt-get -f install -y
+           fi ;;
+        5) # Microsoft Teams
+           if ! has teams; then
+               TEAMS_VER=$(curl -s https://api.github.com/repos/IsmaelMartinez/teams-for-linux/releases/latest | jq -r '.tag_name' | tr -d 'v')
+               wget -q "https://github.com/IsmaelMartinez/teams-for-linux/releases/download/v${TEAMS_VER}/teams-for-linux_${TEAMS_VER}_amd64.deb" -O /tmp/teams.deb
+               sudo dpkg -i /tmp/teams.deb || sudo apt-get -f install -y
+           fi ;;
+        6) # Element (Matrix)
+           if ! has element-desktop; then
+               wget -qO /usr/share/keyrings/element-io.gpg https://packages.element.io/debian/element-io-archive-keyring.gpg
+               echo "deb [signed-by=/usr/share/keyrings/element-io.gpg] https://packages.element.io/debian default main" \
+                   | sudo tee /etc/apt/sources.list.d/element-io.list > /dev/null
+               sudo apt-get update -qq && apt_install element-desktop
+           fi ;;
+        7) # Mattermost
+           if ! has mattermost-desktop; then
+               MM_VER=$(curl -s https://api.github.com/repos/mattermost/desktop/releases/latest | jq -r '.tag_name' | tr -d 'v')
+               wget -q "https://releases.mattermost.com/desktop/${MM_VER}/mattermost-desktop-${MM_VER}-linux-amd64.deb" -O /tmp/mattermost.deb
+               sudo dpkg -i /tmp/mattermost.deb || sudo apt-get -f install -y
+           fi ;;
+        8) # Skype
+           if ! has skypeforlinux; then
+               wget -q "https://go.skype.com/skypeforlinux-64.deb" -O /tmp/skype.deb
+               sudo dpkg -i /tmp/skype.deb || sudo apt-get -f install -y
+           fi ;;
         9) apt_install thunderbird ;;
         10) apt_install geary ;;
+        11) # Betterbird
+            if ! has betterbird; then
+                BB_VER=$(curl -s https://api.github.com/repos/Betterbird/thunderbird-patches/releases/latest | jq -r '.tag_name' | head -1)
+                warn "Betterbird: download manual em https://www.betterbird.eu/downloads/"
+            fi ;;
         12) apt_install evolution ;;
+        13) # WhatsApp (nativefier)
+            if has npm && ! has whatsapp-nativefier; then
+                npm install -g nativefier 2>/dev/null && \
+                nativefier --name "WhatsApp" "https://web.whatsapp.com" "$HOME/.local/share/" 2>/dev/null && \
+                ln -sf "$HOME/.local/share/WhatsApp-linux-x64/WhatsApp" "$HOME/.local/bin/whatsapp" || \
+                warn "WhatsApp nativefier: precisas de Node/npm"
+            else
+                warn "WhatsApp unofficial: instala Node primeiro ou usa https://web.whatsapp.com"
+            fi ;;
     esac
 done
 
