@@ -2176,6 +2176,61 @@ if in_array 0 "${SEL_PRODUCTIVITY[@]}" && ! has obsidian; then
     chmod +x "$HOME/.local/bin/obsidian"
 fi
 
+# Notion Desktop (unofficial AppImage)
+if in_array 1 "${SEL_PRODUCTIVITY[@]}"; then
+    step "Notion Desktop"
+    NOTION_VER=$(curl -s https://api.github.com/repos/notion-enhancer/notion-repackaged/releases/latest | jq -r '.tag_name' | tr -d 'v')
+    wget -q "https://github.com/notion-enhancer/notion-repackaged/releases/download/v${NOTION_VER}/notion-app-enhanced_${NOTION_VER}_amd64.deb" -O /tmp/notion.deb 2>/dev/null
+    if [ -f /tmp/notion.deb ] && [ -s /tmp/notion.deb ]; then
+        sudo dpkg -i /tmp/notion.deb || sudo apt-get -f install -y
+    else
+        warn "Notion: download manual em https://www.notion.so/desktop"
+    fi
+fi
+
+# Logseq
+if in_array 2 "${SEL_PRODUCTIVITY[@]}" && ! has logseq; then
+    step "Logseq (AppImage)"
+    LOGSEQ_VER=$(curl -s https://api.github.com/repos/logseq/logseq/releases/latest | jq -r '.tag_name')
+    wget -q "https://github.com/logseq/logseq/releases/download/${LOGSEQ_VER}/Logseq-linux-x64-${LOGSEQ_VER}.AppImage" -O "$HOME/.local/bin/logseq"
+    chmod +x "$HOME/.local/bin/logseq"
+fi
+
+# Joplin
+if in_array 3 "${SEL_PRODUCTIVITY[@]}"; then
+    step "Joplin"
+    curl -s https://raw.githubusercontent.com/laurent22/joplin/dev/Joplin_install_and_update.sh | bash || \
+        warn "Joplin: falhou install, tenta manualmente"
+fi
+
+# Zettlr
+if in_array 4 "${SEL_PRODUCTIVITY[@]}" && ! has zettlr; then
+    step "Zettlr (deb)"
+    ZETTLR_VER=$(curl -s https://api.github.com/repos/Zettlr/Zettlr/releases/latest | jq -r '.tag_name' | tr -d 'v')
+    wget -q "https://github.com/Zettlr/Zettlr/releases/download/v${ZETTLR_VER}/Zettlr-${ZETTLR_VER}-amd64.deb" -O /tmp/zettlr.deb
+    sudo dpkg -i /tmp/zettlr.deb || sudo apt-get -f install -y
+fi
+
+# Dropbox
+if in_array 12 "${SEL_PRODUCTIVITY[@]}" && ! has dropbox; then
+    step "Dropbox"
+    wget -q "https://linux.dropbox.com/packages/debian/dropbox_2024.04.17_amd64.deb" -O /tmp/dropbox.deb 2>/dev/null || \
+        wget -q "https://www.dropbox.com/download?plat=lnx.x86_64" -O /tmp/dropbox.deb
+    sudo dpkg -i /tmp/dropbox.deb || sudo apt-get -f install -y
+fi
+
+# Mega Sync
+if in_array 13 "${SEL_PRODUCTIVITY[@]}"; then
+    step "Mega Sync"
+    MEGA_URL=$(curl -s "https://mega.nz/linux/repo/Debian_12/amd64/" 2>/dev/null | grep -oP 'megasync[^"]+\.deb' | head -1)
+    if [ -n "$MEGA_URL" ]; then
+        wget -q "https://mega.nz/linux/repo/Debian_12/amd64/${MEGA_URL}" -O /tmp/megasync.deb
+        sudo dpkg -i /tmp/megasync.deb || sudo apt-get -f install -y
+    else
+        warn "Mega Sync: download manual em https://mega.nz/sync"
+    fi
+fi
+
 # Bitwarden Desktop
 if in_array 25 "${SEL_PRODUCTIVITY[@]}" && ! has bitwarden; then
     step "Bitwarden (AppImage)"
@@ -2209,6 +2264,33 @@ in_array 3 "${SEL_GAMING[@]}" && apt_install bottles 2>/dev/null || true
 # ProtonUp-Qt
 if in_array 6 "${SEL_GAMING[@]}" && ! has protonup-qt; then
     pip3 install protonup-qt --user 2>/dev/null || true
+fi
+
+# PCSX2 (PS2 emulator)
+if in_array 8 "${SEL_GAMING[@]}"; then
+    step "PCSX2 (Flatpak)"
+    apt_install flatpak 2>/dev/null; flatpak install -y flathub net.pcsx2.PCSX2 2>/dev/null || \
+        warn "PCSX2: instala via Flatpak: flatpak install flathub net.pcsx2.PCSX2"
+fi
+
+# RPCS3 (PS3 emulator)
+if in_array 9 "${SEL_GAMING[@]}"; then
+    step "RPCS3 (Flatpak)"
+    apt_install flatpak 2>/dev/null; flatpak install -y flathub net.rpcs3.RPCS3 2>/dev/null || \
+        warn "RPCS3: instala via Flatpak: flatpak install flathub net.rpcs3.RPCS3"
+fi
+
+# Yuzu / Ryujinx (Switch emulators)
+if in_array 10 "${SEL_GAMING[@]}"; then
+    warn "Yuzu foi encerrado (processo legal Nintendo). Ryujinx também. Alternativas: sudachi, citron, torzu (builds community)"
+    warn "Ryujinx: https://github.com/ryujinx-mirror/ryujinx (mirror)"
+fi
+
+# Cemu (Wii U emulator)
+if in_array 11 "${SEL_GAMING[@]}"; then
+    step "Cemu (Flatpak)"
+    apt_install flatpak 2>/dev/null; flatpak install -y flathub info.cemu.Cemu 2>/dev/null || \
+        warn "Cemu: instala via Flatpak: flatpak install flathub info.cemu.Cemu"
 fi
 
 # GitHub Copilot CLI
