@@ -39,14 +39,20 @@ echo "╚═══════════════════════�
 echo ""
 
 # ~/.config entries
-backup_and_link "$DOTFILES_DIR/nvim"    "$CONFIG_DIR/nvim"
-backup_and_link "$DOTFILES_DIR/kitty"   "$CONFIG_DIR/kitty"
-backup_and_link "$DOTFILES_DIR/hypr"    "$CONFIG_DIR/hypr"
-backup_and_link "$DOTFILES_DIR/waybar"  "$CONFIG_DIR/waybar"
-backup_and_link "$DOTFILES_DIR/rofi"    "$CONFIG_DIR/rofi"
-backup_and_link "$DOTFILES_DIR/btop"    "$CONFIG_DIR/btop"
-backup_and_link "$DOTFILES_DIR/wlogout" "$CONFIG_DIR/wlogout"
-backup_and_link "$DOTFILES_DIR/tabby"   "$CONFIG_DIR/tabby"
+backup_and_link "$DOTFILES_DIR/nvim"      "$CONFIG_DIR/nvim"
+backup_and_link "$DOTFILES_DIR/kitty"     "$CONFIG_DIR/kitty"
+backup_and_link "$DOTFILES_DIR/hypr"      "$CONFIG_DIR/hypr"
+backup_and_link "$DOTFILES_DIR/waybar"    "$CONFIG_DIR/waybar"
+backup_and_link "$DOTFILES_DIR/rofi"      "$CONFIG_DIR/rofi"
+backup_and_link "$DOTFILES_DIR/btop"      "$CONFIG_DIR/btop"
+backup_and_link "$DOTFILES_DIR/wlogout"   "$CONFIG_DIR/wlogout"
+backup_and_link "$DOTFILES_DIR/tabby"     "$CONFIG_DIR/tabby"
+backup_and_link "$DOTFILES_DIR/swaync"    "$CONFIG_DIR/swaync"
+backup_and_link "$DOTFILES_DIR/swappy"    "$CONFIG_DIR/swappy"
+backup_and_link "$DOTFILES_DIR/cava"      "$CONFIG_DIR/cava"
+backup_and_link "$DOTFILES_DIR/fastfetch" "$CONFIG_DIR/fastfetch"
+backup_and_link "$DOTFILES_DIR/qt5ct"     "$CONFIG_DIR/qt5ct"
+backup_and_link "$DOTFILES_DIR/kvantum"   "$CONFIG_DIR/Kvantum"
 
 # tmux
 backup_and_link "$DOTFILES_DIR/tmux/tmux.conf" "$HOME/.tmux.conf"

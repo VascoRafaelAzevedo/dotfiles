@@ -12,3 +12,39 @@
 [credential "https://gist.github.com"]
 	helper = 
 	helper = !/usr/bin/gh auth git-credential
+[core]
+	editor = nvim
+	pager = delta
+	autocrlf = input
+[init]
+	defaultBranch = main
+[pull]
+	rebase = false
+[push]
+	autoSetupRemote = true
+[merge]
+	conflictstyle = diff3
+[diff]
+	colorMoved = default
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+	light = false
+	side-by-side = true
+	line-numbers = true
+[alias]
+	st = status -sb
+	lg = log --oneline --graph --decorate --all
+	lga = log --oneline --graph --decorate --all --author-date-order
+	co = checkout
+	cb = checkout -b
+	cm = commit -m
+	ca = commit --amend --no-edit
+	can = commit --amend
+	undo = reset HEAD~1 --mixed
+	unstage = restore --staged
+	stash-all = stash push --include-untracked
+	aliases = config --get-regexp alias
+	recent = branch --sort=-committerdate --format='%(refname:short) %(committerdate:relative)'
+	whoami = config user.email

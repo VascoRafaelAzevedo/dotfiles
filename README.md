@@ -1,6 +1,6 @@
-# dotfiles — vasco-debian
+# dotfiles — VascoRafaelAzevedo
 
-Config pessoal para Debian + Hyprland (perfil minimalista).
+Config pessoal para Debian 13 (trixie) + Hyprland (perfil minimalista).
 
 ## Estrutura
 
@@ -13,20 +13,40 @@ dotfiles/
 ├── waybar/         Waybar i3-minimal (Gruvbox, bottom bar)
 ├── rofi/           Rofi launcher + tema minimal Gruvbox
 ├── btop/           btop.conf + tema Catppuccin Macchiato
+├── wlogout/        wlogout layout + ícones + estilo Gruvbox
+├── swaync/         swaync notification center
+├── swappy/         swappy screenshot editor
+├── cava/           cava visualizador de áudio
+├── fastfetch/      fastfetch configs (default + compact)
+├── qt5ct/          qt5ct theme config
+├── kvantum/        Kvantum theme config
+├── tabby/          Tabby terminal + SSH profiles
 ├── zsh/            .zshrc (Oh My Zsh + Powerlevel10k) + .p10k.zsh
-└── git/            .gitconfig
+└── git/            .gitconfig (com aliases e delta pager)
 ```
 
 ## Instalação rápida
 
 ```bash
-git clone <repo> ~/dotfiles
+git clone https://github.com/VascoRafaelAzevedo/dotfiles ~/dotfiles
 cd ~/dotfiles
 chmod +x install.sh
 ./install.sh
 ```
 
-O script cria symlinks e faz backup automático de configs existentes.
+O script cria symlinks, faz backup automático de configs existentes, e torna todos os scripts hypr executáveis.
+
+## Setup numa máquina nova (Debian 13)
+
+Para uma instalação limpa, usa o `setup.sh` interativo:
+
+```bash
+chmod +x setup.sh
+./setup.sh              # modo interativo completo
+./setup.sh --dry-run    # pré-visualiza o que seria instalado
+./setup.sh --resume     # retoma instalação interrompida
+./setup.sh --reset      # limpa estado guardado
+```
 
 ---
 
@@ -95,8 +115,61 @@ O script cria symlinks e faz backup automático de configs existentes.
 - Plugins: git, zsh-autosuggestions, zsh-syntax-highlighting
 - NVM e Conda com lazy load (shell rápido)
 - Aliases: `v`=nvim, `t`=tmux, `??`=gh copilot
+- Integrações: zoxide, fzf, eza, bat
 
 ### Git
 - Utilizador: Vasco Rafael Azevedo
 - Email: 1230776@isep.ipp.pt
 - Autenticação GitHub via `gh auth`
+- Pager: delta (side-by-side diff)
+- Aliases úteis: `lg`, `st`, `co`, `cb`, `cm`, `undo`, `unstage`, `recent`
+
+---
+
+## Troubleshooting
+
+### Plugins do Nvim não instalam
+- Abre `nvim`, o lazy.nvim deve auto-instalar. Se não: `:Lazy sync`
+- Precisa de `git`, `node`, `npm` (para LSP servers via Mason)
+
+### Waybar não aparece
+```bash
+killall waybar; waybar &
+# verificar logs:
+waybar 2>&1 | tail -20
+```
+
+### Hyprland scripts sem permissão de execução
+```bash
+find ~/.config/hypr/scripts ~/.config/hypr/UserScripts -name "*.sh" -exec chmod +x {} \;
+chmod +x ~/.config/hypr/initial-boot.sh
+```
+
+### swww wallpaper não carrega
+```bash
+swww-daemon &
+swww img ~/.config/hypr/wallpaper_effects/.wallpaper_current
+```
+
+### swaync sem notificações
+```bash
+swaync &
+# ou reinicia:
+pkill swaync; swaync &
+```
+
+### TPM (tmux plugins) não instala
+- Dentro de tmux: `Ctrl+a` + `I` (maiúscula)
+
+### Tema Kvantum não aplica
+```bash
+kvantummanager  # GUI para seleccionar tema
+qt5ct           # GUI para qt5 theme engine
+```
+
+### Fontes Nerd Font não aparecem
+```bash
+fc-cache -fv
+# verificar:
+fc-list | grep -i "FantasqueSans"
+```

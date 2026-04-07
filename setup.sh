@@ -4,7 +4,12 @@
 #  Autor: VascoRafaelAzevedo | dotfiles
 #
 #  Uso:
-#    chmod +x setup.sh && ./setup.sh
+#    chmod +x setup.sh && ./setup.sh [--dry-run] [--resume]
+#
+#  Flags:
+#    --dry-run    Mostra o que seria instalado sem instalar nada
+#    --resume     Retoma a partir de uma sessão anterior (usa ~/.setup-state)
+#    --reset      Limpa o estado guardado e começa do início
 #
 #  O script:
 #    1. Faz perguntas sobre o que queres instalar
@@ -13,6 +18,27 @@
 #    4. É idempotente (podes correr várias vezes)
 # =============================================================================
 set -euo pipefail
+
+# ─────────────────────────────────────────────────────────────
+# FLAGS
+# ─────────────────────────────────────────────────────────────
+DRY_RUN=false
+RESUME=false
+STATE_FILE="$HOME/.setup-state"
+
+for arg in "$@"; do
+    case "$arg" in
+        --dry-run) DRY_RUN=true ;;
+        --resume)  RESUME=true ;;
+        --reset)   rm -f "$STATE_FILE"; echo "Estado limpo."; exit 0 ;;
+        --help|-h)
+            echo "Uso: $0 [--dry-run] [--resume] [--reset]"
+            echo "  --dry-run  Mostra o que seria instalado sem instalar nada"
+            echo "  --resume   Retoma sessão anterior guardada em ~/.setup-state"
+            echo "  --reset    Limpa estado guardado"
+            exit 0 ;;
+    esac
+done
 
 # ─────────────────────────────────────────────────────────────
 # CORES
@@ -282,9 +308,21 @@ sudo -v
 SUDO_PID=$!
 trap 'kill "$SUDO_PID" 2>/dev/null; echo ""' EXIT INT TERM
 
-# ═══════════════════════════════════════════════════════════════
-# BLOCO 1: AMBIENTE / WINDOW MANAGER
-# ═══════════════════════════════════════════════════════════════
+# Carregar estado anterior se --resume
+if [[ "$RESUME" == true ]]; then
+    if [[ -f "$STATE_FILE" ]]; then
+        info "A carregar sessão anterior de $STATE_FILE ..."
+        # shellcheck source=/dev/null
+        source "$STATE_FILE"
+        echo -e "\n${GREEN}Estado carregado. A saltar Q&A e a ir directo para instalação.${NC}\n"
+        # Saltar para a instalação
+    else
+        warn "Nenhum estado guardado encontrado ($STATE_FILE). A começar do início."
+        RESUME=false
+    fi
+fi
+
+if [[ "$RESUME" == false ]]; then
 section "1/9 — AMBIENTE GRÁFICO"
 
 echo -e "  ${BOLD}Queres instalar o Hyprland (tiling Wayland compositor)?${NC}"
@@ -819,6 +857,8 @@ if ask_yn "Instalar GitHub Copilot CLI? (gh extension)" y; then
     INSTALL_COPILOT_CLI=true
 fi
 
+fi # end if RESUME == false
+
 # ═══════════════════════════════════════════════════════════════
 # RESUMO ANTES DE INSTALAR
 # ═══════════════════════════════════════════════════════════════
@@ -850,11 +890,65 @@ if ! ask_yn "Confirmas e inicias a instalação?" y; then
     exit 0
 fi
 
+# Guardar estado da sessão para --resume
+{
+    echo "INSTALL_HYPRLAND=$INSTALL_HYPRLAND"
+    echo "INSTALL_WM_EXTRAS=$INSTALL_WM_EXTRAS"
+    echo "INSTALL_FIREFOX=$INSTALL_FIREFOX"
+    echo "INSTALL_BRAVE=$INSTALL_BRAVE"
+    echo "INSTALL_CHROME=$INSTALL_CHROME"
+    echo "INSTALL_DOTFILES=$INSTALL_DOTFILES"
+    echo "DOTFILES_REPO='$DOTFILES_REPO'"
+    echo "INSTALL_ASUS=$INSTALL_ASUS"
+    echo "INSTALL_NVIDIA=$INSTALL_NVIDIA"
+    echo "INSTALL_BLUETOOTH=$INSTALL_BLUETOOTH"
+    echo "INSTALL_DEV_FOLDERS=$INSTALL_DEV_FOLDERS"
+    echo "INSTALL_DOCKER=$INSTALL_DOCKER"
+    echo "INSTALL_DOCKER_COMPOSE=$INSTALL_DOCKER_COMPOSE"
+    echo "INSTALL_PORTAINER=$INSTALL_PORTAINER"
+    echo "INSTALL_KUBECTL=$INSTALL_KUBECTL"
+    echo "INSTALL_HELM=$INSTALL_HELM"
+    echo "INSTALL_TERRAFORM=$INSTALL_TERRAFORM"
+    echo "INSTALL_AWSCLI=$INSTALL_AWSCLI"
+    echo "INSTALL_ANSIBLE=$INSTALL_ANSIBLE"
+    echo "INSTALL_NODE=$INSTALL_NODE"
+    echo "INSTALL_GO=$INSTALL_GO"
+    echo "INSTALL_RUST=$INSTALL_RUST"
+    echo "INSTALL_PYTHON=$INSTALL_PYTHON"
+    echo "INSTALL_PHP=$INSTALL_PHP"
+    echo "INSTALL_RUBY=$INSTALL_RUBY"
+    echo "INSTALL_JAVA=$INSTALL_JAVA"
+    echo "INSTALL_FLUTTER=$INSTALL_FLUTTER"
+    echo "INSTALL_DOTNET=$INSTALL_DOTNET"
+    echo "WM_EXTRAS_SEL=(${WM_EXTRAS_SEL[*]:-})"
+    echo "SEL_BROWSERS=(${SEL_BROWSERS[*]:-})"
+    echo "SEL_LANGUAGES=(${SEL_LANGUAGES[*]:-})"
+    echo "SEL_DEVOPS=(${SEL_DEVOPS[*]:-})"
+    echo "SEL_DEVTOOLS=(${SEL_DEVTOOLS[*]:-})"
+    echo "SEL_DATABASES=(${SEL_DATABASES[*]:-})"
+    echo "SEL_TERMINAL=(${SEL_TERMINAL[*]:-})"
+    echo "SEL_MULTIMEDIA=(${SEL_MULTIMEDIA[*]:-})"
+    echo "SEL_COMMUNICATION=(${SEL_COMMUNICATION[*]:-})"
+    echo "SEL_PRODUCTIVITY=(${SEL_PRODUCTIVITY[*]:-})"
+    echo "SEL_GAMING=(${SEL_GAMING[*]:-})"
+    echo "SEL_FONTS=(${SEL_FONTS[*]:-})"
+    echo "SEL_THEMES=(${SEL_THEMES[*]:-})"
+} > "$STATE_FILE"
+info "Estado guardado em $STATE_FILE (usa --resume para retomar)"
+
 # ═══════════════════════════════════════════════════════════════
 # ─────────────────── INSTALAÇÃO ────────────────────────────
 # ═══════════════════════════════════════════════════════════════
 
+[[ "$DRY_RUN" == true ]] && warn "MODO DRY-RUN: nenhum pacote será instalado"
+
 apt_install() {
+    if [[ "$DRY_RUN" == true ]]; then
+        for pkg in "$@"; do
+            pkg_installed "$pkg" && info "[dry-run] Já instalado: $pkg" || echo -e "  ${DIM}[dry-run] apt install: $pkg${NC}"
+        done
+        return 0
+    fi
     for pkg in "$@"; do
         if ! pkg_installed "$pkg"; then
             step "apt: $pkg"
@@ -867,6 +961,10 @@ apt_install() {
 
 add_apt_repo() {
     local name="$1"; local keyurl="$2"; local keypath="$3"; local repostr="$4"; local listfile="$5"
+    if [[ "$DRY_RUN" == true ]]; then
+        [[ -f "$listfile" ]] || echo -e "  ${DIM}[dry-run] Adicionar repo: $name${NC}"
+        return 0
+    fi
     if [ ! -f "$listfile" ]; then
         step "Repo: $name"
         if [[ "$keyurl" == gpg:* ]]; then
@@ -885,8 +983,10 @@ NERD_VER="v3.3.0"
 
 # ── FASE 0: Update & build tools ──────────────────────────
 section "A — Base do sistema"
-sudo apt-get update -qq
-sudo apt-get upgrade -y -qq
+if [[ "$DRY_RUN" == false ]]; then
+    sudo apt-get update -qq
+    sudo apt-get upgrade -y -qq
+fi
 apt_install \
     build-essential cmake meson ninja-build pkg-config \
     git curl wget unzip tar zip \
