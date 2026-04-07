@@ -982,7 +982,7 @@ add_apt_repo() {
 
 BUILD="$HOME/.setup-build"
 mkdir -p "$BUILD"
-NERD_VER="v3.3.0"
+NERD_VER=$(curl -s https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest | jq -r '.tag_name' 2>/dev/null || echo "v3.3.0")
 
 # ── FASE 0: Update & build tools ──────────────────────────
 section "A — Base do sistema"
@@ -2371,6 +2371,7 @@ for idx in "${SEL_FONTS[@]}"; do
         8) apt_install fonts-noto fonts-noto-color-emoji ;;
         9) apt_install fonts-inter || true ;;
         10) apt_install fonts-roboto ;;
+        11) apt_install fonts-noto-cjk ;;
     esac
 done
 
@@ -2414,6 +2415,20 @@ for idx in "${SEL_THEMES[@]}"; do
            } ;;
         5) # Kvantum
            apt_install qt5-style-kvantum qt5-style-kvantum-themes ;;
+        6) # Orchis GTK theme
+           if ! [ -d "$HOME/.themes/Orchis" ]; then
+               step "Orchis GTK theme"
+               git clone --depth=1 https://github.com/vinceliuice/Orchis-theme.git /tmp/orchis-theme
+               bash /tmp/orchis-theme/install.sh --dest "$HOME/.themes" 2>/dev/null || \
+                   cp -r /tmp/orchis-theme/src/* "$HOME/.themes/"
+           fi ;;
+        7) # WhiteSur GTK theme
+           if ! [ -d "$HOME/.themes/WhiteSur-Dark" ]; then
+               step "WhiteSur GTK theme"
+               git clone --depth=1 https://github.com/vinceliuice/WhiteSur-gtk-theme.git /tmp/whitesur-theme
+               bash /tmp/whitesur-theme/install.sh --dest "$HOME/.themes" 2>/dev/null || \
+                   cp -r /tmp/whitesur-theme/src/* "$HOME/.themes/"
+           fi ;;
     esac
 done
 
