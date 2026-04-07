@@ -1269,6 +1269,8 @@ done
 [[ "${INSTALL_MELD:-false}" == true ]] && apt_install meld
 [[ "${INSTALL_WIRESHARK:-false}" == true ]] && apt_install wireshark
 [[ "${INSTALL_DIFFUSE:-false}" == true ]] && apt_install diffuse
+[[ "${INSTALL_HTTPIE:-false}" == true ]] && apt_install httpie
+[[ "${INSTALL_MITMPROXY:-false}" == true ]] && apt_install mitmproxy
 
 # Databases apt
 [[ "${INSTALL_POSTGRES:-false}" == true ]] && apt_install postgresql postgresql-client
@@ -1277,12 +1279,69 @@ done
 [[ "${INSTALL_MONGODB:-false}" == true ]] && apt_install mongodb-org
 [[ "${INSTALL_SQLITE_TOOLS:-false}" == true ]] && apt_install sqlite3 sqlitebrowser
 
-# Docker
+# Elasticsearch
+if [[ "${INSTALL_ELASTICSEARCH:-false}" == true ]] && ! has elasticsearch; then
+    step "Elasticsearch"
+    wget -qO /tmp/elasticsearch.gpg https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    sudo gpg --dearmor -o /usr/share/keyrings/elasticsearch.gpg /tmp/elasticsearch.gpg
+    echo "deb [signed-by=/usr/share/keyrings/elasticsearch.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main" \
+        | sudo tee /etc/apt/sources.list.d/elastic-8.x.list > /dev/null
+    sudo apt-get update -qq && apt_install elasticsearch
+    sudo systemctl enable elasticsearch
+fi
+
+# Cassandra
+if [[ "${INSTALL_CASSANDRA:-false}" == true ]] && ! has cassandra; then
+    step "Apache Cassandra"
+    wget -qO /tmp/cassandra.gpg https://downloads.apache.org/cassandra/KEYS
+    sudo gpg --dearmor -o /usr/share/keyrings/cassandra.gpg /tmp/cassandra.gpg
+    echo "deb [signed-by=/usr/share/keyrings/cassandra.gpg] https://debian.cassandra.apache.org 41x main" \
+        | sudo tee /etc/apt/sources.list.d/cassandra.list > /dev/null
+    sudo apt-get update -qq && apt_install cassandra
+fi
+
+# InfluxDB
+if [[ "${INSTALL_INFLUXDB:-false}" == true ]] && ! has influxd; then
+    step "InfluxDB"
+    wget -qO /tmp/influxdb.gpg https://repos.influxdata.com/influxdata-archive_compat.key
+    sudo gpg --dearmor -o /usr/share/keyrings/influxdb.gpg /tmp/influxdb.gpg
+    echo "deb [signed-by=/usr/share/keyrings/influxdb.gpg] https://repos.influxdata.com/debian stable main" \
+        | sudo tee /etc/apt/sources.list.d/influxdb.list > /dev/null
+    sudo apt-get update -qq && apt_install influxdb2
+fi
+
+# MinIO (S3-compatible object storage)
+if [[ "${INSTALL_MINIO:-false}" == true ]] && ! has minio; then
+    step "MinIO"
+    wget -q https://dl.min.io/server/minio/release/linux-amd64/minio -O /tmp/minio
+    chmod +x /tmp/minio && sudo mv /tmp/minio /usr/local/bin/minio
+    wget -q https://dl.min.io/client/mc/release/linux-amd64/mc -O /tmp/mc
+    chmod +x /tmp/mc && sudo mv /tmp/mc /usr/local/bin/mc
+fi
+
+# CockroachDB
+if [[ "${INSTALL_COCKROACHDB:-false}" == true ]] && ! has cockroach; then
+    step "CockroachDB"
+    CRDB_VER=$(curl -s https://api.github.com/repos/cockroachdb/cockroach/releases/latest | jq -r '.tag_name')
+    wget -q "https://binaries.cockroachdb.com/cockroach-${CRDB_VER}.linux-amd64.tgz" -O /tmp/cockroach.tgz
+    tar -xzf /tmp/cockroach.tgz -C /tmp/
+    sudo cp "/tmp/cockroach-${CRDB_VER}.linux-amd64/cockroach" /usr/local/bin/
+    rm -rf /tmp/cockroach.tgz "/tmp/cockroach-${CRDB_VER}.linux-amd64"
+fi
+
+# Docker (with compose plugin — INSTALL_DOCKER_COMPOSE is bundled as docker-compose-plugin)
 if [[ "$INSTALL_DOCKER" == true ]]; then
     apt_install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
     sudo usermod -aG docker "$USER"
     sudo systemctl enable docker
     info "Docker instalado. Re-login necessário para usar sem sudo."
+elif [[ "${INSTALL_DOCKER_COMPOSE:-false}" == true ]]; then
+    # Compose standalone sem Docker engine (raro, mas suportado)
+    step "Docker Compose standalone"
+    COMPOSE_VER=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r '.tag_name')
+    sudo curl -L "https://github.com/docker/compose/releases/download/${COMPOSE_VER}/docker-compose-linux-x86_64" \
+        -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
 fi
 
 # Multimedia apt
@@ -1738,9 +1797,56 @@ if [[ "${INSTALL_ACT:-false}" == true ]] && ! has act; then
 fi
 
 # lazydocker
-if (in_array 15 "${SEL_DEVOPS[@]}" || in_array 2 "${SEL_TERMINAL[@]}") && ! has lazydocker; then
+if ([[ "${INSTALL_LAZYDOCKER:-false}" == true ]] || in_array 15 "${SEL_DEVOPS[@]}" || in_array 2 "${SEL_TERMINAL[@]}") && ! has lazydocker; then
     step "lazydocker"
     curl https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash
+fi
+
+# ctop (container top)
+if [[ "${INSTALL_CTOP:-false}" == true ]] && ! has ctop; then
+    step "ctop"
+    wget -q "https://github.com/bcicen/ctop/releases/latest/download/ctop-0.7.7-linux-amd64" -O /tmp/ctop
+    chmod +x /tmp/ctop && sudo mv /tmp/ctop /usr/local/bin/ctop
+fi
+
+# dive (Docker image analyser)
+if [[ "${INSTALL_DIVE:-false}" == true ]] && ! has dive; then
+    step "dive"
+    DIVE_VER=$(curl -s https://api.github.com/repos/wagoodman/dive/releases/latest | jq -r '.tag_name' | tr -d 'v')
+    wget -q "https://github.com/wagoodman/dive/releases/download/v${DIVE_VER}/dive_${DIVE_VER}_linux_amd64.deb" -O /tmp/dive.deb
+    sudo dpkg -i /tmp/dive.deb || sudo apt-get -f install -y
+fi
+
+# LocalStack (AWS emulator)
+if [[ "${INSTALL_LOCALSTACK:-false}" == true ]] && ! has localstack; then
+    step "LocalStack"
+    pip3 install localstack --user
+fi
+
+# MailHog (email testing)
+if [[ "${INSTALL_MAILHOG:-false}" == true ]] && ! has MailHog; then
+    step "MailHog"
+    wget -q "https://github.com/mailhog/MailHog/releases/latest/download/MailHog_linux_amd64" -O /tmp/mailhog
+    chmod +x /tmp/mailhog && sudo mv /tmp/mailhog /usr/local/bin/MailHog
+    # systemd service
+    sudo tee /etc/systemd/system/mailhog.service > /dev/null << 'MHSERVICE'
+[Unit]
+Description=MailHog Email Testing Service
+[Service]
+ExecStart=/usr/local/bin/MailHog
+Restart=always
+[Install]
+WantedBy=multi-user.target
+MHSERVICE
+    sudo systemctl daemon-reload && sudo systemctl enable mailhog
+fi
+
+# Telepresence (K8s local dev)
+if [[ "${INSTALL_TELEPRESENCE:-false}" == true ]] && ! has telepresence; then
+    step "Telepresence"
+    sudo curl -fL https://app.getambassador.io/download/tel2oss/releases/download/v2.17.0/telepresence-linux-amd64 \
+        -o /usr/local/bin/telepresence
+    sudo chmod +x /usr/local/bin/telepresence
 fi
 
 # ── FASE 7: Terminal tools (Go/cargo/binary) ──────────────
@@ -1881,6 +1987,96 @@ if [[ "${INSTALL_BRUNO:-false}" == true ]] && ! has bruno; then
         "deb [signed-by=/usr/share/keyrings/bruno.gpg] https://packagecloud.io/usebruno/bruno/deb/ any main" \
         "/etc/apt/sources.list.d/bruno.list"
     sudo apt-get update -qq && apt_install bruno
+fi
+
+# Beekeeper Studio (DB GUI)
+if [[ "${INSTALL_BEEKEEPER:-false}" == true ]] && ! has beekeeper-studio; then
+    step "Beekeeper Studio"
+    wget -qO /tmp/beekeeper.gpg https://deb.beekeeperstudio.io/beekeeper.key
+    sudo gpg --dearmor -o /usr/share/keyrings/beekeeper.gpg /tmp/beekeeper.gpg
+    echo "deb [signed-by=/usr/share/keyrings/beekeeper.gpg] https://deb.beekeeperstudio.io stable main" \
+        | sudo tee /etc/apt/sources.list.d/beekeeper-studio.list > /dev/null
+    sudo apt-get update -qq && apt_install beekeeper-studio
+fi
+
+# TablePlus
+if [[ "${INSTALL_TABLEPLUS:-false}" == true ]] && ! has tableplus; then
+    step "TablePlus"
+    wget -qO /tmp/tableplus.gpg https://deb.tableplus.com/apt.tableplus.com.gpg.key
+    sudo gpg --dearmor -o /usr/share/keyrings/tableplus.gpg /tmp/tableplus.gpg
+    echo "deb [signed-by=/usr/share/keyrings/tableplus.gpg] https://deb.tableplus.com/debian/22 tableplus main" \
+        | sudo tee /etc/apt/sources.list.d/tableplus.list > /dev/null
+    sudo apt-get update -qq && apt_install tableplus
+fi
+
+# GitKraken
+if [[ "${INSTALL_GITKRAKEN:-false}" == true ]] && ! has gitkraken; then
+    step "GitKraken"
+    GK_VER=$(curl -s https://api.github.com/repos/gitkraken/gitkraken-docker/releases/latest | jq -r '.tag_name' | tr -d 'v') || GK_VER="10.3.0"
+    wget -q "https://release.axocdn.com/linux/gitkraken-amd64.deb" -O /tmp/gitkraken.deb
+    sudo dpkg -i /tmp/gitkraken.deb || sudo apt-get -f install -y
+fi
+
+# PgAdmin (PostgreSQL GUI)
+if [[ "${INSTALL_PGADMIN:-false}" == true ]] && ! has pgadmin4; then
+    step "pgAdmin 4"
+    curl -fsS https://www.pgadmin.org/static/packages_pgadmin_org.pub | sudo gpg --dearmor -o /usr/share/keyrings/packages-pgadmin-org.gpg
+    echo "deb [signed-by=/usr/share/keyrings/packages-pgadmin-org.gpg] https://ftp.postgresql.org/pub/pgadmin/pgadmin4/apt/$(lsb_release -cs) pgadmin4 main" \
+        | sudo tee /etc/apt/sources.list.d/pgadmin4.list > /dev/null
+    sudo apt-get update -qq && apt_install pgadmin4-desktop
+fi
+
+# Redis Commander (Redis GUI — via npm)
+if [[ "${INSTALL_REDIS_COMMANDER:-false}" == true ]] && ! has redis-commander; then
+    step "Redis Commander"
+    has npm || warn "Redis Commander precisa de Node/npm"
+    has npm && npm install -g redis-commander
+fi
+
+# Mongo Express (MongoDB GUI — via npm/Docker)
+if [[ "${INSTALL_MONGO_EXPRESS:-false}" == true ]] && has docker; then
+    step "Mongo Express (Docker)"
+    docker pull mongo-express 2>/dev/null || warn "Mongo Express: 'docker run -p 8081:8081 mongo-express'"
+fi
+
+# Hoppscotch (API client — web/AppImage)
+if [[ "${INSTALL_HOPPSCOTCH:-false}" == true ]]; then
+    step "Hoppscotch (web app — abre https://hoppscotch.io)"
+    # Hoppscotch é web-based; opcional instalar como PWA no browser
+    info "Hoppscotch disponível em https://hoppscotch.io (sem install necessário)"
+fi
+
+# SEQ (log server)
+if [[ "${INSTALL_SEQ:-false}" == true ]]; then
+    step "SEQ (via Docker)"
+    if has docker; then
+        docker pull datalust/seq 2>/dev/null || true
+        info "SEQ disponível. Inicia com: docker run -p 80:80 -p 5341:5341 datalust/seq"
+    else
+        warn "SEQ precisa de Docker"
+    fi
+fi
+
+# SoapUI (SOAP/REST tester)
+if [[ "${INSTALL_SOAPUI:-false}" == true ]] && [ ! -d "$HOME/.local/share/SoapUI" ]; then
+    step "SoapUI"
+    SUI_VER="5.7.2"
+    wget -q "https://dl.eviware.com/soapuios/${SUI_VER}/SoapUI-${SUI_VER}-linux-bin.tar.gz" -O /tmp/soapui.tar.gz
+    mkdir -p "$HOME/.local/share/SoapUI"
+    tar -xzf /tmp/soapui.tar.gz -C "$HOME/.local/share/SoapUI" --strip-components=1
+    ln -sf "$HOME/.local/share/SoapUI/bin/soapui.sh" "$HOME/.local/bin/soapui"
+    chmod +x "$HOME/.local/bin/soapui"
+fi
+
+# PocketBase (self-hosted BaaS)
+if [[ "${INSTALL_POCKETBASE:-false}" == true ]] && ! has pocketbase; then
+    step "PocketBase"
+    PB_VER=$(curl -s https://api.github.com/repos/pocketbase/pocketbase/releases/latest | jq -r '.tag_name' | tr -d 'v')
+    wget -q "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VER}/pocketbase_${PB_VER}_linux_amd64.zip" -O /tmp/pocketbase.zip
+    unzip -q /tmp/pocketbase.zip -d /tmp/pocketbase-extract
+    sudo mv /tmp/pocketbase-extract/pocketbase /usr/local/bin/pocketbase
+    chmod +x /usr/local/bin/pocketbase
+    rm -rf /tmp/pocketbase.zip /tmp/pocketbase-extract
 fi
 
 # Obsidian
